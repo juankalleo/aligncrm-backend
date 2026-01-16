@@ -52,6 +52,9 @@ Rails.application.routes.draw do
         get 'solicitacoes', to: 'workspaces#solicitacoes', on: :member
         delete 'usuarios/:usuario_id', to: 'workspaces#remover_usuario', on: :member
         post 'invites', to: 'workspace_invites#create', on: :member
+        # Workspace-scoped events
+        get 'eventos', to: 'eventos#index', on: :member
+        post 'eventos', to: 'eventos#create', on: :member
       end
 
       # Public invite acceptance/validation
