@@ -96,11 +96,15 @@ if ws_const
     created_workspaces = []
     workspace_defs.first(distinct_users.size).each_with_index do |attrs, idx|
       owner_for_ws = distinct_users[idx]
-      w = ws_const.find_or_create_by!(nome: attrs[:nome]) do |rec|
-        rec.codigo = attrs[:codigo]
-        rec.proprietario = owner_for_ws
+      begin
+        w = ws_const.find_or_create_by!(nome: attrs[:nome]) do |rec|
+          rec.codigo = attrs[:codigo]
+          rec.proprietario = owner_for_ws
+        end
+        created_workspaces << w
+      rescue ActiveRecord::RecordInvalid => e
+        puts "⚠️ Não foi possível criar workspace #{attrs[:nome]} para #{owner_for_ws&.email || owner_for_ws&.id}: #{e.record.errors.full_messages.join('; ')}"
       end
-      created_workspaces << w
     end
 
     # Assign existing projects to the created workspaces (round-robin)
