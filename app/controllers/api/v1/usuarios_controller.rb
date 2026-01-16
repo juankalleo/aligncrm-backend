@@ -148,7 +148,8 @@ module Api
       end
 
       def usuario_params
-        params.permit(:nome, :email, :senha, :role)
+        # Do not permit :senha (not a DB column). Map it to `password` explicitly in actions.
+        params.permit(:nome, :email, :role, :ativo)
       end
 
       def usuario_update_params
