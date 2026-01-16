@@ -176,16 +176,23 @@ module Api
       def avatar
         authorize @usuario
 
-        if params[:avatar].present?
-          @usuario.avatar.attach(params[:avatar])
-          blob_url = Rails.application.routes.url_helpers.rails_blob_url(@usuario.avatar, only_path: true)
+        begin
+          if params[:avatar].present?
+            @usuario.avatar.attach(params[:avatar])
 
-          render_success(
-            { url: blob_url },
-            "Avatar atualizado com sucesso"
-          )
-        else
-          render_error("Arquivo não enviado", :unprocessable_entity)
+            if @usuario.avatar.attached?
+              blob_url = Rails.application.routes.url_helpers.rails_blob_url(@usuario.avatar, only_path: true)
+              render_success({ url: blob_url }, "Avatar atualizado com sucesso")
+            else
+              Rails.logger.error("Avatar attach failed for usuario=#{@usuario.id}")
+              render_error("Erro ao salvar avatar", :internal_server_error)
+            end
+          else
+            render_error("Arquivo não enviado", :unprocessable_entity)
+          end
+        rescue => e
+          Rails.logger.error("Avatar upload error for usuario=#{@usuario.id}: #{e.class} - #{e.message}\n#{e.backtrace.first(20).join("\n")}")
+          render_error("Erro interno ao atualizar avatar", :internal_server_error)
         end
       end
 
