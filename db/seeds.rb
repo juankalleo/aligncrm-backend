@@ -78,6 +78,7 @@ end
 owner = admin
 ws_const = 'Workspace'.safe_constantize
 if ws_const
+  begin
   # Choose up to 3 distinct users to be workspace owners. If fewer than 3 distinct users
   # exist, create only as many workspaces as there are distinct users to avoid
   # validations that restrict one workspace per user.
@@ -129,6 +130,10 @@ if ws_const
     end
 
     puts "✅ Workspaces criados: #{created_workspaces.count}"
+  end
+  rescue => e
+    puts "⚠️ Erro ao criar workspaces: #{e.class} - #{e.message}"
+    puts e.backtrace.first(10)
   end
 else
   # Fallback: create rows directly if model constant isn't loaded yet
