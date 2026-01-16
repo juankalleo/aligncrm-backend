@@ -22,8 +22,7 @@ class UsuarioSerializer < ActiveModel::Serializer
 
   def avatar_url
     return nil unless object.avatar.attached?
-    host = ENV['APP_HOST'] || Rails.application.config.action_mailer.default_url_options[:host] || 'http://localhost:3001'
-    Rails.application.routes.url_helpers.rails_blob_url(object.avatar, host: host)
+    Rails.application.routes.url_helpers.rails_blob_url(object.avatar, only_path: true)
   end
 
   def criado_em
