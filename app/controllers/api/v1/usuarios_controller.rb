@@ -31,6 +31,24 @@ module Api
         end
 
         if @usuario.save
+          # Add new user to the current user's workspaces (default 'Geral' project)
+          begin
+            Workspace.where(proprietario: current_user).find_each do |w|
+              geral = Projeto.find_or_create_by!(nome: "Geral - #{w.nome}") do |p|
+                p.descricao = "Projeto geral automático do workspace #{w.nome}"
+                p.status = :planejamento
+                p.cor = '#7c6be6'
+                p.proprietario = w.proprietario
+                p.workspace = w
+                p.data_inicio = Date.current
+              end
+              geral.adicionar_membro(@usuario)
+            end
+          rescue => e
+            Rails.logger.warn("Não foi possível adicionar usuário recém-criado aos workspaces do criador: ")
+            Rails.logger.warn(e.message)
+          end
+
           registrar_acao(:criar)
           render_success(
             UsuarioSerializer.new(@usuario).as_json,
