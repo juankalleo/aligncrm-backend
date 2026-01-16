@@ -55,8 +55,10 @@ Rails.application.configure do
   # config.active_job.queue_adapter     = :resque
   # config.active_job.queue_name_prefix = "align_crm_production"
 
-  config.action_mailer.raise_delivery_errors = false
-  config.action_mailer.perform_caching = false
+  if config.respond_to?(:action_mailer)
+    config.action_mailer.raise_delivery_errors = false
+    config.action_mailer.perform_caching = false
+  end
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).
