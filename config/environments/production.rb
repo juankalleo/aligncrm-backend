@@ -70,6 +70,18 @@ Rails.application.configure do
   # Use default logging formatter so that PID and timestamp are not suppressed.
   config.log_formatter = ::Logger::Formatter.new
 
+  # Force a TaggedLogging logger to avoid runtime replacements by process managers
+  # that may inject non-logger objects (eg. Logger::Formatter) into broadcast lists.
+  begin
+    require 'active_support/tagged_logging'
+    require 'active_support/logger'
+    forced_logger = ActiveSupport::TaggedLogging.new(ActiveSupport::Logger.new(STDOUT))
+    forced_logger.formatter = config.log_formatter
+    config.logger = forced_logger
+  rescue StandardError => e
+    warn "failed to set forced tagged logger in production.rb: #{e.class} - #{e.message}"
+  end
+
   # Use a different logger for distributed setups.
   # require "syslog/logger"
   # config.logger = ActiveSupport::TaggedLogging.new(Syslog::Logger.new "app-name")
