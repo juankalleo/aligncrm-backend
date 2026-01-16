@@ -78,60 +78,66 @@ end
 owner = admin
 ws_const = 'Workspace'.safe_constantize
 if ws_const
-  ws1 = ws_const.find_or_create_by!(nome: 'Empresa Alpha') do |w|
-    w.codigo = 'ALPHA'
-    w.proprietario = owner
-  end
-  ws2 = ws_const.find_or_create_by!(nome: 'Corp Beta') do |w|
-    w.codigo = 'BETA'
-    w.proprietario = owner
-  end
-  ws3 = ws_const.find_or_create_by!(nome: 'Grupo Gamma') do |w|
-    w.codigo = 'GAMMA'
-    w.proprietario = owner
-  end
+  # Choose up to 3 distinct users to be workspace owners. If fewer than 3 distinct users
+  # exist, create only as many workspaces as there are distinct users to avoid
+  # validations that restrict one workspace per user.
+  distinct_users = Usuario.limit(3).to_a.uniq
 
-  # Assign existing projects to workspaces for testing
-  Projeto.all.limit(3).each_with_index do |p, i|
-    p.update(workspace: [ws1, ws2, ws3][i % 3])
-  end
+  if distinct_users.empty?
+    puts "⚠️ Nenhum usuário disponível para criar workspaces; pulando seed de workspaces"
+  else
+    # Create one workspace per distinct user (max 3)
+    workspace_defs = [
+      { nome: 'Empresa Alpha', codigo: 'ALPHA' },
+      { nome: 'Corp Beta', codigo: 'BETA' },
+      { nome: 'Grupo Gamma', codigo: 'GAMMA' }
+    ]
 
-  # Ensure each workspace has a default 'Geral' project and add all users to it
-  [ws1, ws2, ws3].each do |w|
-    geral = Projeto.find_or_create_by!(nome: "Geral - #{w.nome}") do |p|
-      p.descricao = "Projeto geral automático do workspace #{w.nome}"
-      p.status = :planejamento
-      p.cor = '#7c6be6'
-      p.proprietario = w.proprietario
-      p.workspace = w
-      p.data_inicio = Date.current
+    created_workspaces = []
+    workspace_defs.first(distinct_users.size).each_with_index do |attrs, idx|
+      owner_for_ws = distinct_users[idx]
+      w = ws_const.find_or_create_by!(nome: attrs[:nome]) do |rec|
+        rec.codigo = attrs[:codigo]
+        rec.proprietario = owner_for_ws
+      end
+      created_workspaces << w
     end
 
-    # Add all users as members to the default project so they appear associated with the workspace
-    Usuario.find_each do |u|
-      geral.adicionar_membro(u)
+    # Assign existing projects to the created workspaces (round-robin)
+    Projeto.all.limit(3).each_with_index do |p, i|
+      p.update(workspace: created_workspaces[i % created_workspaces.size])
     end
-  end
 
-  puts "✅ Workspaces criados: "+ws_const.count.to_s
+    # Ensure each created workspace has a default 'Geral' project and add all users to it
+    created_workspaces.each do |w|
+      geral = Projeto.find_or_create_by!(nome: "Geral - #{w.nome}") do |p|
+        p.descricao = "Projeto geral automático do workspace #{w.nome}"
+        p.status = :planejamento
+        p.cor = '#7c6be6'
+        p.proprietario = w.proprietario
+        p.workspace = w
+        p.data_inicio = Date.current
+      end
+
+      Usuario.find_each do |u|
+        geral.adicionar_membro(u)
+      end
+    end
+
+    puts "✅ Workspaces criados: #{created_workspaces.count}"
+  end
 else
   # Fallback: create rows directly if model constant isn't loaded yet
   require 'securerandom'
   now = Time.now.utc
   conn = ActiveRecord::Base.connection
   if conn.table_exists?('workspaces')
-    [
-      { nome: 'Empresa Alpha', codigo: 'ALPHA' },
-      { nome: 'Corp Beta', codigo: 'BETA' },
-      { nome: 'Grupo Gamma', codigo: 'GAMMA' }
-    ].each do |attrs|
-      id = SecureRandom.uuid
-      conn.execute(sanitize_sql_array([
-        "INSERT INTO workspaces (id, nome, codigo, proprietario_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-        id, attrs[:nome], attrs[:codigo], owner.id, now, now
-      ]))
-    end
-    puts "✅ Workspaces criados (inserts)"
+    id = SecureRandom.uuid
+    conn.execute(sanitize_sql_array([
+      "INSERT INTO workspaces (id, nome, codigo, proprietario_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+      id, 'Empresa Alpha', 'ALPHA', owner.id, now, now
+    ]))
+    puts "✅ Workspaces criados (inserts: 1)"
   else
     puts "⚠️ Workspaces table not present yet; skipping workspace seed"
   end

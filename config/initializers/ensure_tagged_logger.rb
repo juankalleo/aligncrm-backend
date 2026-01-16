@@ -3,13 +3,30 @@
 # or controllers calling `logger.tagged` won't raise. Kept minimal and safe.
 begin
   class EnsureTaggedLogger
+    LOG_PATH = '/tmp/rails_logger_state.log'
+    @@last_class = nil
     def initialize(app)
       @app = app
     end
 
     def call(env)
       begin
-        unless defined?(Rails) && Rails.logger&.respond_to?(:tagged)
+        current = (defined?(Rails) && Rails.logger) ? Rails.logger.class.to_s : 'nil'
+        tagged_ok = defined?(Rails) && Rails.logger&.respond_to?(:tagged)
+        if @@last_class != current
+          begin
+            File.open(LOG_PATH, 'a') do |f|
+              f.puts("#{Time.now.utc.iso8601} Rails.logger class change: #{current} tagged?=#{tagged_ok}")
+              f.puts(caller.first(10).join("\n"))
+              f.puts("---")
+            end
+          rescue StandardError
+            # ignore file write errors
+          end
+          @@last_class = current
+        end
+
+        unless tagged_ok
           require 'active_support/tagged_logging'
           require 'active_support/logger'
           new_logger = ActiveSupport::TaggedLogging.new(ActiveSupport::Logger.new(STDOUT))
