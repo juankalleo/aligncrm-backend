@@ -22,7 +22,9 @@ class UsuarioSerializer < ActiveModel::Serializer
 
   def avatar_url
     return nil unless object.avatar.attached?
-    Rails.application.routes.url_helpers.rails_blob_url(object.avatar, only_path: true)
+    host = ENV.fetch('API_HOST', 'api.aligncrm.com.br')
+    protocol = ENV.fetch('API_PROTOCOL', 'https')
+    Rails.application.routes.url_helpers.rails_blob_url(object.avatar, host: host, protocol: protocol)
   end
 
   def criado_em

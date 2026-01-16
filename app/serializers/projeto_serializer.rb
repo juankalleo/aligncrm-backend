@@ -27,9 +27,9 @@ class ProjetoSerializer < ActiveModel::Serializer
 
   def capa_url
     return nil unless object.capa.attached?
-    host = ENV.fetch('API_HOST', 'localhost')
-    port = ENV.fetch('API_PORT', '3001')
-    Rails.application.routes.url_helpers.rails_blob_url(object.capa, host: host, port: port, protocol: 'http')
+    host = ENV.fetch('API_HOST', 'api.aligncrm.com.br')
+    protocol = ENV.fetch('API_PROTOCOL', 'https')
+    Rails.application.routes.url_helpers.rails_blob_url(object.capa, host: host, protocol: protocol)
   end
 
   attribute :workspace do

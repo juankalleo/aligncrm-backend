@@ -47,7 +47,10 @@ class Arquivo < ApplicationRecord
 
   # Métodos
   def url
-    Rails.application.routes.url_helpers.rails_blob_url(file) if file.attached?
+    return nil unless file.attached?
+    host = ENV.fetch('API_HOST', 'api.aligncrm.com.br')
+    protocol = ENV.fetch('API_PROTOCOL', 'https')
+    Rails.application.routes.url_helpers.rails_blob_url(file, host: host, protocol: protocol)
   end
 
   def tamanho_formatado

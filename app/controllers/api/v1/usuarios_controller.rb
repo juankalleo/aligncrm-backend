@@ -181,7 +181,9 @@ module Api
             @usuario.avatar.attach(params[:avatar])
 
             if @usuario.avatar.attached?
-              blob_url = Rails.application.routes.url_helpers.rails_blob_url(@usuario.avatar, only_path: true)
+              host = ENV.fetch('API_HOST', 'api.aligncrm.com.br')
+              protocol = ENV.fetch('API_PROTOCOL', 'https')
+              blob_url = Rails.application.routes.url_helpers.rails_blob_url(@usuario.avatar, host: host, protocol: protocol)
               render_success({ url: blob_url }, "Avatar atualizado com sucesso")
             else
               Rails.logger.error("Avatar attach failed for usuario=#{@usuario.id}")
