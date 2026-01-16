@@ -3,7 +3,11 @@
 class ApplicationController < ActionController::API
   include Pundit::Authorization
   # Ensure the concern is loaded in production/preloaded environments
-  require_dependency 'response_helpers'
+  begin
+    require_relative 'concerns/response_helpers'
+  rescue LoadError
+    require_dependency 'response_helpers'
+  end
   include ResponseHelpers
 
   before_action :authenticate_request

@@ -74,7 +74,8 @@ Rails.application.configure do
   # require "syslog/logger"
   # config.logger = ActiveSupport::TaggedLogging.new(Syslog::Logger.new "app-name")
 
-  if ENV["RAILS_LOG_TO_STDOUT"].present?
+  # Ensure logger supports tagging in all deploys (some process managers don't set RAILS_LOG_TO_STDOUT)
+  unless config.logger&.respond_to?(:tagged)
     logger           = ActiveSupport::TaggedLogging.new(ActiveSupport::Logger.new(STDOUT))
     logger.formatter = config.log_formatter
     config.logger    = logger
