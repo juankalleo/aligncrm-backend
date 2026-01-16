@@ -6,7 +6,14 @@ require_relative "config/environment"
 # logging doesn't fail when requests arrive before initializers run.
 begin
 	if defined?(Rails)
-		unless Rails.logger.respond_to?(:tagged) rescue true
+		has_tagged = false
+		begin
+			has_tagged = Rails.logger.respond_to?(:tagged)
+		rescue StandardError
+			has_tagged = false
+		end
+
+		unless has_tagged
 			require 'active_support/tagged_logging'
 			require 'active_support/logger'
 			wrapped = ActiveSupport::TaggedLogging.new(ActiveSupport::Logger.new(STDOUT))
@@ -14,7 +21,11 @@ begin
 			if defined?(Rails.application) && Rails.application.respond_to?(:config)
 				Rails.application.config.logger = wrapped
 			end
-			wrapped.info('Replaced malformed Rails.logger with ActiveSupport::TaggedLogging in config.ru') rescue nil
+			begin
+				wrapped.info('Replaced malformed Rails.logger with ActiveSupport::TaggedLogging in config.ru')
+			rescue StandardError
+				# ignore logging errors here
+			end
 		end
 	end
 rescue StandardError
