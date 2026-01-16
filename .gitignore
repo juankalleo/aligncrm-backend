@@ -1,0 +1,51 @@
+# Dependencies
+/vendor/bundle/
+/.bundle
+
+# Logs
+/log/*
+!/log/.keep
+
+# Temp files
+/tmp/*
+!/tmp/.keep
+!/tmp/pids
+/tmp/pids/*
+!/tmp/pids/.keep
+
+# Storage
+/storage/*
+!/storage/.keep
+
+# Public uploads
+/public/uploads
+
+# Coverage
+/coverage/
+
+# Environment
+.env
+.env.local
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Rails credentials
+/config/credentials/*.key
+
+# Byebug
+.byebug_history
+
+# Spring
+/tmp/spring/
+
+# Gem
+*.gem
