@@ -19,7 +19,7 @@ class AuthService
 
     # Login de usuário
     def login(email:, senha:, ip: nil)
-      usuario = Usuario.find_by(email: email.downcase)
+      usuario = Usuario.find_by(email: email.to_s.downcase)
 
       unless usuario&.authenticate(senha)
         return { success: false, error: "Email ou senha inválidos" }

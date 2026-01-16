@@ -10,7 +10,7 @@ module Api
         def create
           result = AuthService.login(
             email: params[:email],
-            senha: params[:senha],
+            senha: params[:senha] || params[:password],
             ip: request.remote_ip
           )
 
