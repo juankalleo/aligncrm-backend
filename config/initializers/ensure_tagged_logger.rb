@@ -26,6 +26,7 @@ begin
           @@last_class = current
         end
 
+        # If logger doesn't support tagging, replace it with a TaggedLogging wrapper.
         unless tagged_ok
           require 'active_support/tagged_logging'
           require 'active_support/logger'
@@ -37,6 +38,29 @@ begin
             Rails.logger = new_logger
             Rails.application.config.logger = new_logger if Rails.application&.config
           end
+        end
+
+        # Additional sanitization: if Rails.logger is a BroadcastLogger, ensure its
+        # internal @loggers array does not contain Logger::Formatter (or other
+        # non-logger objects) which will break TaggedLogging's tag stack ops.
+        begin
+          if defined?(ActiveSupport::BroadcastLogger) && Rails.logger.is_a?(ActiveSupport::BroadcastLogger)
+            internal = Rails.logger.instance_variable_get(:@loggers) rescue nil
+            if internal.is_a?(Array) && internal.any? { |l| l.is_a?(Logger::Formatter) || !l.respond_to?(:info) }
+              cleaned = internal.map do |l|
+                if l.is_a?(Logger::Formatter) || !l.respond_to?(:info)
+                  nl = ActiveSupport::Logger.new(STDOUT)
+                  nl.formatter = Rails.application.config.log_formatter if defined?(Rails) && Rails.application&.config&.log_formatter
+                  ActiveSupport::TaggedLogging.new(nl)
+                else
+                  l
+                end
+              end
+              Rails.logger.instance_variable_set(:@loggers, cleaned)
+            end
+          end
+        rescue StandardError
+          # ignore sanitization errors
         end
       rescue StandardError
         # best-effort, do not break requests
