@@ -3,7 +3,7 @@
 module Api
   module V1
     class AuthController < BaseController
-      skip_before_action :authenticate_user!, only: [:login, :register]
+      skip_before_action :authenticate_request, only: [:login, :register]
       
       # POST /api/v1/auth/login
       def login
