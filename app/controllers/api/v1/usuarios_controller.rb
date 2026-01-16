@@ -178,9 +178,10 @@ module Api
 
         if params[:avatar].present?
           @usuario.avatar.attach(params[:avatar])
-          
+          blob_url = Rails.application.routes.url_helpers.rails_blob_url(@usuario.avatar, only_path: true)
+
           render_success(
-            { url: @usuario.avatar.url },
+            { url: blob_url },
             "Avatar atualizado com sucesso"
           )
         else
