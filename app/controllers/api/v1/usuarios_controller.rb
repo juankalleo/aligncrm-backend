@@ -48,7 +48,14 @@ module Api
                   p.proprietario = w.proprietario
                   p.data_inicio = Date.current
                 end
-                geral.adicionar_membro(@usuario)
+                Rails.logger.info("Adding usuario=#{@usuario.id} to project=#{geral_nome.inspect} workspace=#{w.id}")
+                begin
+                  geral.adicionar_membro(@usuario)
+                  membro_exists = geral.projeto_membros.exists?(usuario_id: @usuario.id)
+                  Rails.logger.info("ProjetoMembro created=#{membro_exists} usuario=#{@usuario.id} projeto=#{geral.id}")
+                rescue => e
+                  Rails.logger.error("Failed to add usuario=#{@usuario.id} to projeto=#{geral.id}: #{e.class} - #{e.message}\n#{e.backtrace.first(10).join("\n")}")
+                end
               else
                 Rails.logger.warn("workspace_id=#{params[:workspace_id]} not found when adding new user")
               end
@@ -68,7 +75,14 @@ module Api
                   p.workspace = w
                   p.data_inicio = Date.current
                 end
-                geral.adicionar_membro(@usuario)
+                Rails.logger.info("Adding usuario=#{@usuario.id} to project=#{geral_nome.inspect} workspace=#{w.id}")
+                begin
+                  geral.adicionar_membro(@usuario)
+                  membro_exists = geral.projeto_membros.exists?(usuario_id: @usuario.id)
+                  Rails.logger.info("ProjetoMembro created=#{membro_exists} usuario=#{@usuario.id} projeto=#{geral.id}")
+                rescue => e
+                  Rails.logger.error("Failed to add usuario=#{@usuario.id} to projeto=#{geral.id}: #{e.class} - #{e.message}\n#{e.backtrace.first(10).join("\n")}")
+                end
               end
             end
           rescue => e
