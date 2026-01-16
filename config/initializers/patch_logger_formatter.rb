@@ -28,6 +28,11 @@ begin
     def pop_tags
       # noop
     end
+
+    # Return an array-compatible tag stack expected by ActiveSupport::TaggedLogging
+    def current_tags
+      []
+    end
   end
 rescue StandardError => e
   warn "patch_logger_formatter initializer failed: #{e.class} - #{e.message}"
