@@ -36,8 +36,13 @@ module Api
             if params[:workspace_id].present?
               w = Workspace.find_by(id: params[:workspace_id])
               if w
-                geral = Projeto.find_or_create_by!(nome: "Geral - #{w.nome}", workspace: w) do |p|
-                  p.descricao = "Projeto geral automático do workspace #{w.nome}"
+                ws_name = w.nome.to_s.strip
+                if ws_name != w.nome
+                  Rails.logger.warn("workspace name contains surrounding whitespace: '#{w.nome}' -> '#{ws_name}'")
+                end
+                geral_nome = "Geral - #{ws_name}"
+                geral = Projeto.find_or_create_by!(nome: geral_nome, workspace: w) do |p|
+                  p.descricao = "Projeto geral automático do workspace #{ws_name}"
                   p.status = :planejamento
                   p.cor = '#7c6be6'
                   p.proprietario = w.proprietario
@@ -50,8 +55,13 @@ module Api
             else
               # Fallback: add to workspaces owned by the current_user
               Workspace.where(proprietario: current_user).find_each do |w|
-                geral = Projeto.find_or_create_by!(nome: "Geral - #{w.nome}") do |p|
-                  p.descricao = "Projeto geral automático do workspace #{w.nome}"
+                ws_name = w.nome.to_s.strip
+                if ws_name != w.nome
+                  Rails.logger.warn("workspace name contains surrounding whitespace: '#{w.nome}' -> '#{ws_name}'")
+                end
+                geral_nome = "Geral - #{ws_name}"
+                geral = Projeto.find_or_create_by!(nome: geral_nome) do |p|
+                  p.descricao = "Projeto geral automático do workspace #{ws_name}"
                   p.status = :planejamento
                   p.cor = '#7c6be6'
                   p.proprietario = w.proprietario
