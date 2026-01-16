@@ -2,6 +2,8 @@
 
 class ApplicationController < ActionController::API
   include Pundit::Authorization
+  # Ensure the concern is loaded in production/preloaded environments
+  require_dependency 'response_helpers'
   include ResponseHelpers
 
   before_action :authenticate_request
