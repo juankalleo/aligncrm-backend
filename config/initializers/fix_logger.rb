@@ -29,6 +29,33 @@ begin
       # Fallback: set global logger
       ActiveRecord::Base.logger = new_logger if defined?(ActiveRecord::Base)
     end
+    # Boot-time sanitization: if a BroadcastLogger exists, ensure its @loggers
+    # array contains only logger objects. Replace Formatter or non-logger
+    # entries with a TaggedLogging-wrapped STDOUT logger to avoid runtime
+    # NoMethodError when tag methods are called.
+    begin
+      if defined?(ActiveSupport::BroadcastLogger)
+        b_logger = Rails.logger
+        if b_logger.is_a?(ActiveSupport::BroadcastLogger)
+          internal = b_logger.instance_variable_get(:@loggers) rescue nil
+          if internal.is_a?(Array) && internal.any? { |l| l.is_a?(Logger::Formatter) || !l.respond_to?(:info) }
+            cleaned = internal.map do |l|
+              if l.is_a?(Logger::Formatter) || !l.respond_to?(:info)
+                nl = ActiveSupport::Logger.new(STDOUT)
+                nl.formatter = Rails.application.config.log_formatter if defined?(Rails) && Rails.application&.config&.log_formatter
+                ActiveSupport::TaggedLogging.new(nl)
+              else
+                l
+              end
+            end
+            b_logger.instance_variable_set(:@loggers, cleaned)
+            Rails.logger.info('Sanitized ActiveSupport::BroadcastLogger @loggers at boot') rescue nil
+          end
+        end
+      end
+    rescue StandardError
+      # ignore sanitization errors at boot
+    end
   end
 rescue StandardError => e
   warn "fix_logger initializer failed: "+e.message
