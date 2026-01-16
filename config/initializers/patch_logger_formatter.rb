@@ -15,6 +15,19 @@ begin
         self
       end
     end
+    
+    # No-op tag stack operations used by ActiveSupport::TaggedLogging
+    def clear_tags!
+      # noop
+    end
+
+    def push_tags(*_tags)
+      # noop
+    end
+
+    def pop_tags
+      # noop
+    end
   end
 rescue StandardError => e
   warn "patch_logger_formatter initializer failed: #{e.class} - #{e.message}"
