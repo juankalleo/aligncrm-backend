@@ -31,22 +31,38 @@ module Api
         end
 
         if @usuario.save
-          # Add new user to the current user's workspaces (default 'Geral' project)
+          # If a workspace_id was provided, add the user to that workspace's 'Geral' project.
           begin
-            Workspace.where(proprietario: current_user).find_each do |w|
-              geral = Projeto.find_or_create_by!(nome: "Geral - #{w.nome}") do |p|
-                p.descricao = "Projeto geral automático do workspace #{w.nome}"
-                p.status = :planejamento
-                p.cor = '#7c6be6'
-                p.proprietario = w.proprietario
-                p.workspace = w
-                p.data_inicio = Date.current
+            if params[:workspace_id].present?
+              w = Workspace.find_by(id: params[:workspace_id])
+              if w
+                geral = Projeto.find_or_create_by!(nome: "Geral - #{w.nome}", workspace: w) do |p|
+                  p.descricao = "Projeto geral automático do workspace #{w.nome}"
+                  p.status = :planejamento
+                  p.cor = '#7c6be6'
+                  p.proprietario = w.proprietario
+                  p.data_inicio = Date.current
+                end
+                geral.adicionar_membro(@usuario)
+              else
+                Rails.logger.warn("workspace_id=#{params[:workspace_id]} not found when adding new user")
               end
-              geral.adicionar_membro(@usuario)
+            else
+              # Fallback: add to workspaces owned by the current_user
+              Workspace.where(proprietario: current_user).find_each do |w|
+                geral = Projeto.find_or_create_by!(nome: "Geral - #{w.nome}") do |p|
+                  p.descricao = "Projeto geral automático do workspace #{w.nome}"
+                  p.status = :planejamento
+                  p.cor = '#7c6be6'
+                  p.proprietario = w.proprietario
+                  p.workspace = w
+                  p.data_inicio = Date.current
+                end
+                geral.adicionar_membro(@usuario)
+              end
             end
           rescue => e
-            Rails.logger.warn("Não foi possível adicionar usuário recém-criado aos workspaces do criador: ")
-            Rails.logger.warn(e.message)
+            Rails.logger.warn("Não foi possível adicionar usuário recém-criado aos workspaces: #{e.class} - #{e.message}")
           end
 
           registrar_acao(:criar)
