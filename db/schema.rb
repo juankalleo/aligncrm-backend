@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_01_15_230742) do
+ActiveRecord::Schema[7.1].define(version: 2026_01_17_001100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -58,6 +58,20 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_15_230742) do
     t.index ["uploader_id"], name: "index_arquivos_on_uploader_id"
   end
 
+  create_table "dominios", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "nome", null: false
+    t.integer "porta"
+    t.string "nginx_server"
+    t.datetime "expires_at"
+    t.boolean "notified", default: false, null: false
+    t.uuid "created_by"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by"], name: "index_dominios_on_created_by"
+    t.index ["expires_at"], name: "index_dominios_on_expires_at"
+    t.index ["nome"], name: "index_dominios_on_nome", unique: true
+  end
+
   create_table "evento_participantes", id: false, force: :cascade do |t|
     t.uuid "evento_id", null: false
     t.uuid "usuario_id", null: false
@@ -85,6 +99,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_15_230742) do
     t.index ["data_inicio"], name: "index_eventos_on_data_inicio"
     t.index ["projeto_id"], name: "index_eventos_on_projeto_id"
     t.index ["tipo"], name: "index_eventos_on_tipo"
+  end
+
+  create_table "financeiros", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "projeto_id", null: false
+    t.string "categoria", default: "outro", null: false
+    t.string "tipo", default: "a_pagar", null: false
+    t.text "descricao"
+    t.decimal "valor", precision: 12, scale: 2, default: "0.0", null: false
+    t.date "data"
+    t.boolean "pago", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["projeto_id"], name: "index_financeiros_on_projeto_id"
   end
 
   create_table "fluxogramas", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -230,6 +257,22 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_15_230742) do
     t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
   end
 
+  create_table "vps", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "nome", null: false
+    t.string "login_root", null: false
+    t.string "senha_root"
+    t.string "email_relacionado"
+    t.integer "storage_gb"
+    t.datetime "comprado_em"
+    t.string "comprado_em_local"
+    t.jsonb "projetos", default: []
+    t.uuid "created_by"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by"], name: "index_vps_on_created_by"
+    t.index ["nome"], name: "index_vps_on_nome"
+  end
+
   create_table "workspace_invites", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "token", null: false
     t.uuid "workspace_id", null: false
@@ -260,10 +303,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_15_230742) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "arquivos", "projetos"
   add_foreign_key "arquivos", "usuarios", column: "uploader_id"
+  add_foreign_key "dominios", "usuarios", column: "created_by"
   add_foreign_key "evento_participantes", "eventos"
   add_foreign_key "evento_participantes", "usuarios"
   add_foreign_key "eventos", "projetos"
   add_foreign_key "eventos", "usuarios", column: "criador_id"
+  add_foreign_key "financeiros", "projetos"
   add_foreign_key "fluxogramas", "projetos"
   add_foreign_key "fluxogramas", "usuarios", column: "criador_id"
   add_foreign_key "historicos", "usuarios"
@@ -276,6 +321,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_15_230742) do
   add_foreign_key "tarefas", "projetos"
   add_foreign_key "tarefas", "usuarios", column: "criador_id"
   add_foreign_key "tarefas", "usuarios", column: "responsavel_id"
+  add_foreign_key "vps", "usuarios", column: "created_by"
   add_foreign_key "workspace_invites", "usuarios", column: "accepted_by_id"
   add_foreign_key "workspace_invites", "usuarios", column: "invited_by_id"
   add_foreign_key "workspace_invites", "workspaces"

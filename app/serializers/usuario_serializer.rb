@@ -4,17 +4,18 @@ class UsuarioSerializer < ActiveModel::Serializer
   attributes :id, :nome, :email, :role, :ativo, :avatar_url, :criado_em, :atualizado_em
 
   attribute :projetos do
-    Projeto.do_usuario(object).map do |p|
-      { id: p.id, nome: p.nome }
+    # Avoid running a DB query here; expect controller to preload `projetos` when needed.
+    if object.class.reflect_on_association(:projetos) && object.association(:projetos).loaded?
+      object.projetos.map { |p| { id: p.id, nome: p.nome } }
+    else
+      []
     end
   end
 
   attribute :workspaces do
-    ws_const = 'Workspace'.safe_constantize
-    if ws_const
-      ws_const.do_usuario(object).map do |w|
-        { id: w.id, nome: w.nome }
-      end
+    # Avoid running a DB query here; expect controller to preload `workspaces` when needed.
+    if object.class.reflect_on_association(:workspaces) && object.association(:workspaces).loaded?
+      object.workspaces.map { |w| { id: w.id, nome: w.nome } }
     else
       []
     end

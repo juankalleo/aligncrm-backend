@@ -117,6 +117,17 @@ Rails.application.routes.draw do
       end
 
       resources :links, only: [:index, :create, :update, :destroy]
+      
+      # Domain management
+      resources :dominios do
+        collection do
+          get 'expirados_count'
+        end
+      end
+      
+      # VPS and credentials management
+      resources :vps
+      resources :financeiros
     end
   end
 end
