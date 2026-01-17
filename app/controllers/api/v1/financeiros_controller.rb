@@ -49,7 +49,9 @@ module Api
       end
 
       def financeiro_params
-        params.permit(:projeto_id, :categoria, :tipo, :descricao, :valor, :data, :pago, :vencimento)
+        # Remove campos nulos do params
+        filtered = params.permit(:projeto_id, :categoria, :tipo, :descricao, :valor, :data, :pago, :vencimento).to_h.reject { |_, v| v.nil? }
+        ActionController::Parameters.new(filtered).permit(:projeto_id, :categoria, :tipo, :descricao, :valor, :data, :pago, :vencimento)
       end
     end
   end
