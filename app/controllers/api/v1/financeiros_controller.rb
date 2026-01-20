@@ -49,9 +49,12 @@ module Api
       end
 
       def financeiro_params
-        # Remove campos nulos do params
-        filtered = params.permit(:projeto_id, :categoria, :tipo, :descricao, :valor, :data, :pago, :vencimento).to_h.reject { |_, v| v.nil? }
-        ActionController::Parameters.new(filtered).permit(:projeto_id, :categoria, :tipo, :descricao, :valor, :data, :pago, :vencimento)
+        allowed = %i[projeto_id categoria tipo descricao valor data pago vencimento]
+        # only permit attributes that actually exist on the model (handles schema drift)
+        permitted = allowed.select { |a| Financeiro.column_names.include?(a.to_s) }
+        # permit only existing columns, and remove nil values to avoid assigning nulls
+        filtered = params.permit(*permitted).to_h.reject { |_, v| v.nil? }
+        ActionController::Parameters.new(filtered).permit(*permitted)
       end
     end
   end
